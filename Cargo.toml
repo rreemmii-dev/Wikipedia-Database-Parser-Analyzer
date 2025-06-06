@@ -1,0 +1,23 @@
+bin = [
+    { name = "Wikipedia", path = "src/main.rs" },
+    { name = "Example", path = "src/simple_main.rs" }
+]
+
+[package]
+name = "Wikipedia"
+edition = "2024"
+default-run = "Wikipedia"
+
+[dependencies]
+regex = "1.11.1"
+html-escape = "0.2.13"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = "warn"
+
+[profile.release]
+# For profiling:
+debug = 1
