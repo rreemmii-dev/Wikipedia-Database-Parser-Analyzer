@@ -1,17 +1,17 @@
 # Wikipedia-Database-Parser-Analyzer
 
 
-
 A parser and analyzer for Wikipedia database dumps, written in Rust.
 
-Generate the graph linking each article to its sources, keep the most important vertexes using algorithms such as the [PageRank algorithm](https://en.wikipedia.org/wiki/PageRank), and render it using Gephi!
-
-You can also find the shortest path between 2 Wikipedia articles using the [BFS algorithm](https://en.wikipedia.org/wiki/Breadth-first_search).
+* Generate the graph linking each article to its sources (= parents)
+* Find the shortest path between 2 Wikipedia articles using the [BFS algorithm](https://en.wikipedia.org/wiki/Breadth-first_search)
+* Keep the most important vertexes using algorithms such as the [PageRank algorithm](https://en.wikipedia.org/wiki/PageRank)
+* Render the graph using Gephi
 
 <div align="center">
-Cluster dealing with UK politics in a generated graph:
+Cluster dealing with computers in a 10,000 vertexes graph:
 <br>
-<img src="https://rreemmii-dev.github.io/wikipedia-database-parser-analyzer/uk_politics_graph.png" alt="Graph of UK Politics" />
+<img src="https://rreemmii-dev.github.io/wikipedia-database-parser-analyzer/computer_cluster.png" alt="Cluster about computers" />
 </div>
 
 
@@ -38,17 +38,17 @@ Ensure you have `cargo` installed.
 
 ### Wikipedia dump download
 
-1. Download a Wikipedia dump (a list can be found [here](https://meta.wikimedia.org/wiki/Data_dump_torrents#English_Wikipedia)). The dump I used is [English Wikipedia, 2025-05-01](https://academictorrents.com/details/cd872797612d95384de3a0ab7e6a1f156bf91495) (uncompressed size: 101 GB, contains about 7 million parsed articles).
+1. Download a Wikipedia dump. A list can be found [here](https://meta.wikimedia.org/wiki/Data_dump_torrents#English_Wikipedia), and a download tutorial [here](https://academictorrents.com/docs/downloading.html). The latest dump I used is [English Wikipedia, 2025-06-01](https://academictorrents.com/details/21dc1fcba351758654f37fb904e629d143dc2a9f) (uncompressed size of 103 GB, contains more than 7 million parsed articles).
 2. Extract the dump.
 3. Set the `WIKI_PATH` constant in both [src/main.rs](src/main.rs) and [src/simple_main.rs](src/simple_main.rs) to the dump file path, relative to `Cargo.toml`.
 
 ### Run
 
-#### Run the example file:
+#### Run the simple example file:
 
 [src/simple_main.rs](src/simple_main.rs) does the following:
-1. Generates required databases (using `generate_databases`, see [#Provided tools/Generate and load link databases](#generate-and-load-link-databases) for more information).
-2. Loads databases.
+1. Generates required databases and saves them in files (using `generate_databases`, see [#Provided tools/Generate and load link databases](#generate-and-load-link-databases) for more information).
+2. Loads databases from generated files.
 3. Executes a BFS to find the shortest path from the `Wikipedia` article to the `Rust_(programming_language)` article.
 4. Filters the graph to keep only vertexes having more than 1000 children or parents.
 5. Exports the filtered graph as a CSV file.
@@ -74,26 +74,30 @@ cargo run --release
 - `graph`: The graph with each article pointing towards its sources, stored as an adjacency list. Each article is represented by an ID.
 - `name_from_id`: The article name corresponding to the article ID.
 
-`load_name_id_databases` and `load_graph_database` in [src/database/load_database.rs](src/database/load_database.rs) load the two previous databases, plus the `id_from_name` database.
+Databases are saved in files, so you can run `generate_databases` once and for all.
+
+`load_graph` and `load_name_from_id_and_id_from_name` in [src/database/load_database.rs](src/database/load_database.rs) load the two previous databases, plus the `id_from_name` database.
 
 ### Different graph types with built-in functions
 
-There are 2 graph types:
-- `VecGraph` (`Vec<Vec<usize>>`) for computation on the whole graph. See [src/vec_graph_utils.rs](src/vec_graph_utils.rs).
-- `HashmapGraph` (`HashMap<u32, HashSet<u32>>`) if some vertexes were to be removed from the graph. See [src/hashmap_graph_utils.rs](src/hashmap_graph_utils.rs).
+There are 2 graph types, both being adjacency lists:
+- `VecGraph` (`Vec<Vec<usize>>`) for computation on the whole graph. See [src/graph_utils/vec_graph_utils.rs](src/graph_utils/vec_graph_utils.rs).
+- `HashmapGraph` (`HashMap<u32, HashSet<u32>>`) if some vertexes were to be removed from the graph. See [src/graph_utils/hashmap_graph_utils.rs](src/graph_utils/hashmap_graph_utils.rs).
+
+The reason for having 2 graph types is that access to `Vec` elements is much faster than access to `HashMap` elements, but items cannot be removed from a `Vec` while leaving other indexes unchanged.
 
 ### Render graphs using Gephi
 
-To open the graph in Gephi, it has to be exported as a CSV file using `export_as_csv` in [src/hashmap_graph_utils.rs](src/hashmap_graph_utils.rs).
+To open the graph in Gephi, it has to be exported as a CSV file using `export_as_csv` in [src/graph_utils/hashmap_graph_utils.rs](src/graph_utils/hashmap_graph_utils.rs).
 
-It is then stored as an adjacency list using `#` as the CSV delimiter (Wikipedia article names cannot contain `#`).
+It is then stored as an adjacency list. It is advised to use `#` as the CSV delimiter (Wikipedia article names cannot contain `#`).
 
 It is not recommended to export graph having more than 10,000 vertexes. See https://gephi.org/users/requirements/.
 
 
 ## Wikipedia documentation
 
-Here is some documentation about Wikipedia databases:
+Here is some documentation about Wikipedia articles:
 - Links parsing:
     - `[[PageName]]` links: https://en.wikipedia.org/wiki/Help:Link#Wikilinks_(internal_links)
     - `{{section link|PageName}}` links: https://en.wikipedia.org/wiki/Help:Link#Section_linking_(anchors) and https://en.wikipedia.org/wiki/Template:Section_link

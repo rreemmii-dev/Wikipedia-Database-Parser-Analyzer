@@ -12,12 +12,9 @@ default-run = "Wikipedia"
 regex = "1.11.1"
 html-escape = "0.2.13"
 
-[lints.rust]
-unsafe_code = "forbid"
-
 [lints.clippy]
 pedantic = "warn"
 
-[profile.release]
 # For profiling:
-debug = 1
+#[profile.release]
+#debug = true
