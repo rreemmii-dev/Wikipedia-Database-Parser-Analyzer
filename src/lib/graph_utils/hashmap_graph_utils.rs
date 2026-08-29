@@ -1,9 +1,11 @@
 use crate::graph_utils::vec_graph_utils::VecGraph;
 use std::collections::{HashMap, HashSet};
+use std::fs::File;
 use std::io::Write;
 
 pub type HashmapGraph = HashMap<u32, HashSet<u32>>;
 
+#[must_use]
 pub fn hashmap_of_vec(vec: &VecGraph) -> HashmapGraph {
     vec.iter()
         .enumerate()
@@ -16,6 +18,7 @@ pub fn hashmap_of_vec(vec: &VecGraph) -> HashmapGraph {
         .collect::<HashMap<_, _>>()
 }
 
+#[must_use]
 pub fn filtered_hashmap_of_vec(graph: &VecGraph, kept_vertexes: &HashSet<usize>) -> HashmapGraph {
     graph
         .iter()
@@ -35,19 +38,18 @@ pub fn filtered_hashmap_of_vec(graph: &VecGraph, kept_vertexes: &HashSet<usize>)
 }
 
 pub fn remove_vertex(vertex: u32, graph: &mut HashmapGraph, reversed: &mut HashmapGraph) -> bool {
-    if graph.contains_key(&vertex) {
-        let parents = graph.remove(&vertex).unwrap();
-        let children = reversed.remove(&vertex).unwrap();
-        for parent in parents {
-            reversed.get_mut(&parent).unwrap().remove(&vertex);
-        }
-        for child in children {
-            graph.get_mut(&child).unwrap().remove(&vertex);
-        }
-        true
-    } else {
-        false
+    if !graph.contains_key(&vertex) {
+        return false;
     }
+    let parents = graph.remove(&vertex).unwrap();
+    let children = reversed.remove(&vertex).unwrap();
+    for parent in parents {
+        reversed.get_mut(&parent).unwrap().remove(&vertex);
+    }
+    for child in children {
+        graph.get_mut(&child).unwrap().remove(&vertex);
+    }
+    true
 }
 
 pub fn export_as_csv(
@@ -64,7 +66,7 @@ pub fn export_as_csv(
             content.push_str(&id.to_string());
         }
     };
-    let mut file = std::fs::File::create(path).unwrap();
+    let mut file = File::create(path).unwrap();
     let mut is_first_line = true;
     for (&id, parents) in graph {
         let mut content = String::new();

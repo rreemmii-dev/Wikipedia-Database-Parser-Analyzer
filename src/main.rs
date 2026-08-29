@@ -1,22 +1,16 @@
-mod graph_utils {
-    pub mod hashmap_graph_utils;
-    pub mod vec_graph_utils;
-}
-mod database {
-    pub mod generate_database;
-    pub mod load_database;
-}
-
-use crate::database::generate_database::generate_databases;
-use crate::database::load_database::{load_graph, load_name_from_id_and_id_from_name};
-use crate::graph_utils::hashmap_graph_utils::{
+use Wikipedia::database::generate_database::generate_databases;
+use Wikipedia::database::load_database::{load_graph, load_name_from_id_and_id_from_name};
+use Wikipedia::graph_utils::hashmap_graph_utils::{
     HashmapGraph, export_as_csv, filtered_hashmap_of_vec,
 };
-use crate::graph_utils::vec_graph_utils::{VecGraph, bfs, count_parents};
+use Wikipedia::graph_utils::vec_graph_utils::{VecGraph, bfs, count_parents};
 use std::collections::HashSet;
+use std::path::Path;
 use std::time::Instant;
 
-const WIKI_PATH: &str = "../wikipedia_database/enwiki-20250601-pages-articles-multistream.xml";
+// const WIKI_PATH: &str = "../wikipedia_database/enwiki-20250601-pages-articles-multistream.xml";
+// const WIKI_PATH: &str = "/data/rdeloye-24/enwiki-20250601-pages-articles-multistream.xml";
+const WIKI_PATH: &str = "raw_database/enwiki-20250601-pages-articles-multistream.xml";
 const NAME_FROM_ID_PATH: &str = "data/name_from_id.txt";
 const GRAPH_PATH: &str = "data/graph.txt";
 const FILTERED_CSV_PATH: &str = "data/filtered.csv";
@@ -55,6 +49,7 @@ fn filtered_graph_by_score(
     filtered_hashmap_of_vec(graph, &kept_vertexes)
 }
 
+#[allow(unused)] // Another example function that could be used...
 fn filtered_graph_by_connections_number(
     graph: &VecGraph,
     reversed: &VecGraph,
@@ -71,43 +66,58 @@ fn filtered_graph_by_connections_number(
 
 fn main() {
     let t0 = Instant::now();
-
-    generate_databases(WIKI_PATH, GRAPH_PATH, NAME_FROM_ID_PATH);
-
-    let (name_from_id, id_from_name) = load_name_from_id_and_id_from_name(NAME_FROM_ID_PATH);
-    println!("Name from id: {}, {:?}", name_from_id.len(), t0.elapsed());
-    let graph = load_graph(GRAPH_PATH);
-    println!("Graph: {}, {:?}", graph.len(), t0.elapsed());
-
-    let nb_edges = graph.iter().map(Vec::len).sum::<usize>();
-    println!("Nb edges: {nb_edges}, {:?}", t0.elapsed());
-
-    bfs(
-        id_from_name["Susanna Barker"],
-        id_from_name["United Nations Security Council Resolution 2079"],
-        &graph,
-    )
-    .unwrap()
-    .into_iter()
-    .for_each(|id| println!("{}", name_from_id[id]));
-    println!("{:?}", t0.elapsed());
-
-    let page_rank_result = run_n_page_rank_iterations(10, &graph);
-    println!("PageRank: {:?}", t0.elapsed());
-    let mut res = page_rank_result.iter().enumerate().collect::<Vec<_>>();
-    res.sort_by(|&a, &b| f64::partial_cmp(b.1, a.1).unwrap()); // Reversed sorting
-
-    let ranking = res[0..100]
-        .iter()
-        .map(|&(k, &v)| (name_from_id[k].clone(), v))
-        .collect::<Vec<_>>();
-    for (rank, (k, v)) in ranking.iter().enumerate() {
-        println!("{}) {}: {}", rank + 1, k, v);
+    if !(Path::new(GRAPH_PATH).exists() && Path::new(NAME_FROM_ID_PATH).exists()) {
+        generate_databases(WIKI_PATH, GRAPH_PATH, NAME_FROM_ID_PATH);
+        println!("Databases generated in {:?}", t0.elapsed());
     }
 
-    let filtered = filtered_graph_by_score(&graph, &page_rank_result, 1_000);
-    println!("Filtered: {:?}", t0.elapsed());
+    let t0 = Instant::now();
+    println!("Start loading databases...");
+    let (name_from_id, id_from_name) = load_name_from_id_and_id_from_name(NAME_FROM_ID_PATH);
+    let graph = load_graph(GRAPH_PATH);
+    assert_eq!(graph.len(), name_from_id.len());
+    assert_eq!(graph.len(), id_from_name.len());
+    let nb_edges = graph.iter().map(Vec::len).sum::<usize>();
+    println!(
+        "Graph loaded: {} vertexes, {} edges, loaded in {:?}",
+        graph.len(),
+        nb_edges,
+        t0.elapsed()
+    );
+    println!();
 
+    let t0 = Instant::now();
+    let source = "Wikipedia";
+    let destination = "Rust (programming language)";
+    println!("BFS from {} to {}...", source, destination);
+    let bfs_result = bfs(id_from_name[source], id_from_name[destination], &graph).unwrap();
+    println!("{} clicks:", bfs_result.len() - 1);
+    for article_id in bfs_result {
+        println!("* {}", name_from_id[article_id]);
+    }
+    println!("Computed in {:?}", t0.elapsed());
+    println!();
+
+    let t0 = Instant::now();
+    println!("Computing PageRank...");
+    let page_rank_result = run_n_page_rank_iterations(10, &graph);
+    let mut res = page_rank_result.iter().enumerate().collect::<Vec<_>>();
+    res.sort_by(|&a, &b| f64::partial_cmp(b.1, a.1).unwrap()); // Reversed sorting
+    println!("Most popular articles:");
+    for (rank, (article_id, _score)) in res.into_iter().take(10).enumerate() {
+        println!("{}) {}", rank + 1, name_from_id[article_id]);
+    }
+    println!("Computed in {:?}", t0.elapsed());
+    println!();
+
+    let t0 = Instant::now();
+    println!("Filtering the graph to keep only the 1000 most popular articles...");
+    let filtered = filtered_graph_by_score(&graph, &page_rank_result, 1_000);
+    println!("Filtered in {:?}", t0.elapsed());
+    println!();
+
+    let t0 = Instant::now();
+    println!("Saving filtered graph as CSV...");
     export_as_csv(&filtered, Some(&name_from_id), "#", FILTERED_CSV_PATH);
-    println!("Export as CSV: {:?}", t0.elapsed());
+    println!("Exported as CSV in {:?}", t0.elapsed());
 }

@@ -1,20 +1,23 @@
-bin = [
-    { name = "Wikipedia", path = "src/main.rs" },
-    { name = "Example", path = "src/simple_main.rs" }
-]
-
 [package]
 name = "Wikipedia"
 edition = "2024"
-default-run = "Wikipedia"
 
 [dependencies]
-regex = "1.11.1"
-html-escape = "0.2.13"
+regex = "1.13.1"
+html-escape = "0.2.15"
+spmc = "0.3.0" # To be replaced by std::sync::mpmc when stable: https://doc.rust-lang.org/std/sync/mpmc/index.html
+
+[profile.release]
+# For profiling:
+#debug = true
+#split-debuginfo = "off"
+#strip = false
 
 [lints.clippy]
-pedantic = "warn"
-
-# For profiling:
-#[profile.release]
-#debug = true
+pedantic = { level = "warn", priority = -1 }
+cast_possible_truncation = "allow"
+implicit_hasher = "allow"
+items_after_statements = "allow"
+missing_panics_doc = "allow"
+stable_sort_primitive = "allow"
+uninlined_format_args = "allow"
