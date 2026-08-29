@@ -8,9 +8,7 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::time::Instant;
 
-// const WIKI_PATH: &str = "../wikipedia_database/enwiki-20250601-pages-articles-multistream.xml";
-// const WIKI_PATH: &str = "/data/rdeloye-24/enwiki-20250601-pages-articles-multistream.xml";
-const WIKI_PATH: &str = "raw_database/enwiki-20250601-pages-articles-multistream.xml";
+const WIKI_PATH: &str = "../wikipedia_database/enwiki-20250601-pages-articles-multistream.xml";
 const NAME_FROM_ID_PATH: &str = "data/name_from_id.txt";
 const GRAPH_PATH: &str = "data/graph.txt";
 const FILTERED_CSV_PATH: &str = "data/filtered.csv";

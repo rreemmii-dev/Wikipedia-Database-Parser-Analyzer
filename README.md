@@ -46,7 +46,7 @@ Ensure you have `cargo` installed.
 
 1. Download a Wikipedia dump. A list can be found [here](https://meta.wikimedia.org/wiki/Data_dump_torrents#English_Wikipedia), and a download tutorial [here](https://academictorrents.com/docs/downloading.html). The latest dump I used is [English Wikipedia, 2025-06-01](https://academictorrents.com/details/21dc1fcba351758654f37fb904e629d143dc2a9f) (uncompressed size of 103 GB, contains more than 7 million parsed articles).
 2. Extract the dump.
-3. Set the `WIKI_PATH` constant in both [src/main.rs](src/main.rs) and [src/bin/example.rs](src/bin/example.rs) to the dump file path, relative to `Cargo.toml`.
+3. Set the `WIKI_PATH` constant in [src/main.rs](src/main.rs) to the dump file path, relative to `Cargo.toml`.
 
 ### Run
 
@@ -63,7 +63,7 @@ Then, importing them only takes a few seconds.
 1. If they have not been generated yet, generates the required databases and saves them in files (using `generate_databases`, see [#Provided tools/Generate and load link databases](#generate-and-load-link-databases) for more information).
 2. Loads databases from generated files.
 3. Executes a BFS to find the shortest path from the `Wikipedia` article to the `Rust (programming language)` article.
-4. Compute a PageRank ranking, and display the 10 most populars articles.
+4. Compute a PageRank ranking, and display the 10 most popular articles.
 5. Filters the graph to keep only the 1000 most popular articles.
 6. Exports the filtered graph as a CSV file.
 
