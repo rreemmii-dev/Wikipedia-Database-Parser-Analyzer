@@ -6,7 +6,7 @@ A parser and analyzer for Wikipedia database dumps, written in Rust.
 * Generate the graph linking each article to its sources (= parents)
 * Find the shortest path between 2 Wikipedia articles using the [BFS algorithm](https://en.wikipedia.org/wiki/Breadth-first_search)
 * Keep the most important vertexes using algorithms such as the [PageRank algorithm](https://en.wikipedia.org/wiki/PageRank)
-* Render the graph using Gephi
+* Render the graph using [Gephi](https://gephi.org)
 
 <div align="center">
 Cluster dealing with computers in a 10,000 vertexes graph:
@@ -18,7 +18,7 @@ Cluster dealing with computers in a 10,000 vertexes graph:
 > [!NOTE]
 > You can find the shortest path between any two Wikipedia articles on this website:
 > 
-> http://wikipedia.remi-deloye.me:10080 (make sure to use `http`, as `https` is not configured)
+> http://wikipedia.remi-deloye.me (make sure to use `http`, as `https` is not configured)
 
 
 ## Table of Contents
@@ -90,13 +90,13 @@ Databases are saved in files, so you can run `generate_databases` once and for a
 
 There are 2 graph types, both being adjacency lists:
 - `VecGraph` (`Vec<Vec<usize>>`) for computation on the whole graph. See [src/lib/graph_utils/vec_graph_utils.rs](src/lib/graph_utils/vec_graph_utils.rs).
-- `HashmapGraph` (`HashMap<u32, HashSet<u32>>`) if some vertexes were to be removed from the graph. See [src/lib/graph_utils/hashmap_graph_utils.rs](src/lib/graph_utils/hashmap_graph_utils.rs).
+- `MapGraph` (`HashMap<u32, HashSet<u32>>`) if some vertexes were to be removed from the graph. See [src/lib/graph_utils/map_graph_utils.rs](src/lib/graph_utils/map_graph_utils.rs).
 
 The reason for having 2 graph types is that access to `Vec` elements is much faster than access to `HashMap` elements, but items cannot be removed from a `Vec` while leaving other indexes unchanged.
 
 ### Render graphs using Gephi
 
-To open the graph in Gephi, it has to be exported as a CSV file using `export_as_csv` in [src/lib/graph_utils/hashmap_graph_utils.rs](src/lib/graph_utils/hashmap_graph_utils.rs).
+To open the graph in [Gephi](https://gephi.org), it has to be exported as a CSV file using `export_as_csv` in [src/lib/graph_utils/map_graph_utils.rs](src/lib/graph_utils/map_graph_utils.rs).
 
 It is then stored as an adjacency list. It is advised to use `#` as the CSV delimiter (Wikipedia article names cannot contain `#`).
 

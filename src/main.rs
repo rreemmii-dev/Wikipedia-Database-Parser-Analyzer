@@ -1,8 +1,6 @@
 use Wikipedia::database::generate_database::generate_databases;
 use Wikipedia::database::load_database::{load_graph, load_name_from_id_and_id_from_name};
-use Wikipedia::graph_utils::hashmap_graph_utils::{
-    HashmapGraph, export_as_csv, filtered_hashmap_of_vec,
-};
+use Wikipedia::graph_utils::map_graph_utils::{MapGraph, export_as_csv, filtered_map_of_vec};
 use Wikipedia::graph_utils::vec_graph_utils::{VecGraph, bfs, count_parents};
 use std::collections::HashSet;
 use std::path::Path;
@@ -37,14 +35,14 @@ fn filtered_graph_by_score(
     graph: &VecGraph,
     scores: &Vec<f64>,
     number_vertexes: usize,
-) -> HashmapGraph {
+) -> MapGraph {
     let mut sorted_score = scores.iter().enumerate().collect::<Vec<_>>();
     sorted_score.sort_by(|a, b| f64::partial_cmp(b.1, a.1).unwrap()); // Reversed sorting
     let kept_vertexes = sorted_score[0..number_vertexes]
         .iter()
         .map(|x| x.0)
         .collect::<HashSet<_>>();
-    filtered_hashmap_of_vec(graph, &kept_vertexes)
+    filtered_map_of_vec(graph, &kept_vertexes)
 }
 
 #[allow(unused)] // Another example function that could be used...
@@ -53,13 +51,13 @@ fn filtered_graph_by_connections_number(
     reversed: &VecGraph,
     min_nb_parents: u32,
     min_nb_children: u32,
-) -> HashmapGraph {
+) -> MapGraph {
     let parents = count_parents(graph);
     let children = count_parents(reversed);
     let kept_vertexes = (0..graph.len())
         .filter(|&v| parents[v] > min_nb_parents || children[v] > min_nb_children)
         .collect::<HashSet<_>>();
-    filtered_hashmap_of_vec(graph, &kept_vertexes)
+    filtered_map_of_vec(graph, &kept_vertexes)
 }
 
 fn main() {

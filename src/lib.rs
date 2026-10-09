@@ -4,7 +4,7 @@ mod lib {
         pub mod load_database;
     }
     pub mod graph_utils {
-        pub mod hashmap_graph_utils;
+        pub mod map_graph_utils;
         pub mod vec_graph_utils;
     }
 }

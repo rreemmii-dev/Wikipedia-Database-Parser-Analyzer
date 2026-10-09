@@ -1,7 +1,7 @@
 use regex::Regex;
 use spmc::channel;
 use std::collections::{HashMap, HashSet};
-use std::fs::{create_dir_all, File};
+use std::fs::{File, create_dir_all};
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex};
@@ -306,54 +306,54 @@ fn wikilink_is_kept(
 }
 
 fn get_raw_redirection(page: &str) -> Option<String> {
-    // TODO: Regex isn't useful here...
-    static REDIRECT_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r#"<redirect title="(.*?)" />"#).unwrap());
-    if let Some(capture) = REDIRECT_REGEX.captures(page) {
-        Some(capture[1].to_string())
+    // Corresponds to regex r#"<redirect title="(.*?)" />"#
+    if let Some(start_index) = page.find("<redirect title=\"") {
+        let opening_index = start_index + "<redirect title=\"".len();
+        let closing_index = opening_index + page[opening_index..].find("\" />").unwrap();
+        Some(page[opening_index..closing_index].to_string())
     } else {
         None
     }
 }
 
 fn get_raw_title(page: &str) -> String {
-    // TODO: Regex isn't useful here...
-    static TITLE_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"<title>(.*?)</title>").unwrap());
-    let capture = TITLE_REGEX.captures(page).unwrap();
-    capture[1].to_string()
+    // Corresponds to regex r"<title>(.*?)</title>"
+    let opening_index = page.find("<title>").unwrap() + "<title>".len();
+    let closing_index = opening_index + page[opening_index..].find("</title>").unwrap();
+    page[opening_index..closing_index].to_string()
 }
 
 fn get_page_content(page: &str) -> String {
+    // Corresponds to regex r"(?s)<text.*?>(.*?)</text>"
     let opening_index = page.find("<text ").unwrap() + "<text ".len();
     let opening_index = opening_index + page[opening_index..].find(">").unwrap() + ">".len();
     let closing_index = opening_index + page[opening_index..].find("</text>").unwrap();
     let content = page[opening_index..closing_index].to_string();
 
-    clear_content(&content)
+    clear_page_content(&content)
 }
 
-fn clear_content(content: &str) -> String {
+fn clear_page_content(content: &str) -> String {
     let mut content = html_escape::decode_html_entities(content).to_string();
 
-    static COMMENTS_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
-    content = COMMENTS_REGEX.replace_all(&content, "").to_string();
+    // Corresponds to replacing all regex r"(?s)<!--.*?-->" with ""
+    remove_all_occurrences_pattern(&mut content, "<!--", "-->");
 
-    static NOWIKI_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"(?s)<nowiki>.*?</nowiki>").unwrap());
-    content = NOWIKI_REGEX.replace_all(&content, "").to_string();
+    // Corresponds to replacing all regex r"(?s)<nowiki[> ].*?</nowiki>" with ""
+    remove_all_occurrences_pattern(&mut content, "<nowiki>", "</nowiki>");
+    remove_all_occurrences_pattern(&mut content, "<nowiki ", "</nowiki>");
 
-    static SYNTAX_HIGHLIGHT_REGEX: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"(?s)<syntaxhighlight.*?>.*?</syntaxhighlight>").unwrap());
-    content = SYNTAX_HIGHLIGHT_REGEX.replace_all(&content, "").to_string();
+    // Corresponds to replacing all regex r"(?s)<syntaxhighlight[> ].*?</syntaxhighlight>" with ""
+    remove_all_occurrences_pattern(&mut content, "<syntaxhighlight>", "</syntaxhighlight>");
+    remove_all_occurrences_pattern(&mut content, "<syntaxhighlight ", "</syntaxhighlight>");
 
     if !KEEP_FOOTNOTE_SECTIONS {
-        static REFERENCES_REGEX: LazyLock<Regex> =
-            LazyLock::new(|| Regex::new(r"(?s)<ref[> ].*?</ref>").unwrap());
-        content = REFERENCES_REGEX.replace_all(&content, "").to_string();
+        // Corresponds to replacing all regex r"(?s)<ref[> ].*?</ref>" with ""
+        remove_all_occurrences_pattern(&mut content, "<ref>", "</ref>");
+        remove_all_occurrences_pattern(&mut content, "<ref ", "</ref>");
+
+        // Corresponds to replacing regex r"(?s)==\s*(Notes|References|Further reading|External links)\s*==.*" with ""
         let footnote_sections = [
-            // TODO: Use regex? Then \s* for spaces
             "==Notes==",
             "== Notes ==",
             "==References==",
@@ -370,6 +370,25 @@ fn clear_content(content: &str) -> String {
         }
     }
     content
+}
+
+fn remove_all_occurrences_pattern(
+    content: &mut String,
+    opening_pattern: &str,
+    closing_pattern: &str,
+) {
+    let mut last_index = 0;
+    while let Some(start_index) = content[last_index..].find(opening_pattern) {
+        let start_index = last_index + start_index;
+        let opening_index = start_index + opening_pattern.len();
+        if let Some(closing_index) = content[opening_index..].find(closing_pattern) {
+            let closing_index = opening_index + closing_index + closing_pattern.len();
+            content.drain(start_index..closing_index);
+            last_index = start_index;
+        } else {
+            break;
+        }
+    }
 }
 
 fn read_n_pages(n: usize, file: &mut BufReader<File>) -> Option<Vec<String>> {
@@ -440,8 +459,10 @@ fn store_graph(graph: Vec<Vec<u32>>, graph_path: &str) {
             content += WIKILINKS_SEPARATOR;
         }
         if content.ends_with(WIKILINKS_SEPARATOR) {
-            // TODO: Only works because WIKILINKS_SEPARATOR.len() == 1
-            content.pop();
+            content = content
+                .strip_suffix(WIKILINKS_SEPARATOR)
+                .unwrap()
+                .to_string();
         }
         graph_file.write_all(content.as_bytes()).unwrap();
     }
