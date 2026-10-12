@@ -8,17 +8,18 @@ A parser and analyzer for Wikipedia database dumps, written in Rust.
 * Keep the most important vertexes using algorithms such as the [PageRank algorithm](https://en.wikipedia.org/wiki/PageRank)
 * Render the graph using [Gephi](https://gephi.org)
 
-<div align="center">
-Cluster dealing with computers in a 10,000 vertexes graph:
-<br>
-<img src="https://rreemmii-dev.github.io/wikipedia-database-parser-analyzer/computer_cluster.png" alt="Cluster about computers" />
-</div>
-
 
 > [!NOTE]
 > You can find the shortest path between any two Wikipedia articles on this website:
 > 
 > http://wikipedia.remi-deloye.me (make sure to use `http`, as `https` is not configured)
+
+
+<div align="center">
+Cluster dealing with computers in a 10,000 vertexes graph:
+<br>
+<img src="https://rreemmii-dev.github.io/wikipedia-database-parser-analyzer/computer_cluster.png" alt="Cluster about computers" />
+</div>
 
 
 ## Table of Contents
